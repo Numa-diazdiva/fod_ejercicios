@@ -1,4 +1,4 @@
-mi 3245 132.4 Xiaomi
+mi 3245 132 Xiaomi
 14 7
 Está muy bueno el celular
 galaxy 245 333 Samsung
@@ -6,7 +6,7 @@ galaxy 245 333 Samsung
 Tiene muchas cosas
 iPhone 445 500 Aple
 12 50
-
+ 
 1100 32 50 Nokia
 12 5
 Nokia mil cien

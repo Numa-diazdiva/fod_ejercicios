@@ -58,13 +58,18 @@ procedure CrearArchBinario(var aLB: arch; var archTxt: Text);
 	var
 		c: celular;
 	begin
+
 		reset(archTxt);
 		rewrite(aLB);
 		while(not eof(archTxt)) do begin
 			{voy leyendo y almacenando en los campos de "c". Tener en cuenta que los espacios separa por defecto, creo.}
+					writeln('debug0');
 			readln(archTxt, c.nombre, c.cod, c.precio, c.marca); {acrego el nombre porque no figura en la consigna}
+			writeln('debug1');
 			readln(archTxt, c.stockMin, c.stock);
+			writeln('debug2');
 			readln(archTxt, c.descripcion);
+			writeln('debug3');
 			write(aLB,c);
 		end;
 		close(aLB);
