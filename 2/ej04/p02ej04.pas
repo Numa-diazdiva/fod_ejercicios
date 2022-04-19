@@ -16,6 +16,11 @@ máquinas.
 
 program p02ej04;
 
+Uses sysutils;
+
+Const
+	MAQUINAS = 5;
+	VALORMAX = 32000;
 Type
 	tFecha = record
 		dia: 1..31;
@@ -39,34 +44,97 @@ Type
 	archDetalle = file of sesionLog;
 	
 	detalleLan = array [1..5] of archDetalle;
+	posiciones = array [1 .. MAQUINAS] of integer;
 
-procedure AsignarDetalles(var aD:archDetalle);
+	//lectorLan = array [1..MAQUINAS] of sesionLog;
+	
+procedure InicializarFilePos(var pos:posiciones);
 	var
 		i:integer;
 	begin
-		for i:= 1 to 5 do begin
-			assign(aM[i], 'logMaq' + IntoStr(i));
-			reset(aM[i]);
+		for i:=1 to MAQUINAS do begin
+			pos[i]:= 0;
+		end;
+	end;
+
+procedure AsignarDetalles(var lD:detalleLan);
+	var
+		i:integer;
+	begin
+		for i:= 1 to MAQUINAS do begin
+			assign(lD[i], 'logMaq' + IntToStr(i));
+			reset(lD[i]);
 		end;
 		
 	end;
 
-procedure Merge(var aM:archMaestro; var lD:detalleLan);
+procedure CerrarLan(lD:detalleLan);
 	var
-	
+		i:integer;
 	begin
-		{Recordar merge múltiple, vamos buscando el min}
+		for i:= 1 to MAQUINAS do begin
+			close(ld[i]);
+		end;
+	end;
+
+procedure Min(var lD:detalleLan; var rD:sesionLog; var pos:posiciones);
+	var
+		aux:sesionLog;
+		i,iMin:integer;
+	begin
+		iMin:= -1;
+		rD.cod_usuario:= VALORMAX;
+		{me posiciono donde tengo que leer en cada detalle}
+		for i:= 1 to MAQUINAS do begin
+			seek(lD[i],pos[i]);
+			if (not eof(lD[i])) then begin
+				read(lD[i], aux);
+				if (aux.cod_usuario < rD.cod_usuario) then begin
+					rD:= aux;
+					iMin:= i;
+				end;
+			end;
+		end;
+		{Si me paso en estos índices. El seek queda en EOF o crashea?}
+		pos[iMin]:= pos[iMin] + 1;
+	end;
+	
+
+
+procedure Merge(var aM:archMaestro; var lD:detalleLan; var pos:posiciones);
+	var
+		regDet: sesionLog;
+		regMas: sesiones;
+	begin
+		Min(lD,regDet,pos);
+		while (regDet.cod_usuario <> VALORMAX) do begin
+			regMas.tiempo_total:= 0;
+			regMas.cod_usuario:= regDet.cod_usuario;
+			regMas.fecha:= regDet.fecha;
+			{LecturaMin1}
+			while (regDet.cod_usuario = regMas.cod_usuario) do begin
+				regMas.tiempo_total:= regMas.tiempo_total + regDet.tiempo_sesion;
+				Min(lD,regDet,pos);
+			end;
+			write(aM, regMas);
+		end;
 		
 	end;
 
 Var
 	aM:archMaestro;
 	lanD:detalleLan;
-	nombreM, nombreD;
+	nombreM:string;
+	pos:posiciones;
 Begin
+	InicializarFilePos(pos);
 	write('Ingrese el nombre del archivo maestro: '); readln(nombreM);
 	{voy a recibir en un procedure todos los archivos detalle y los voy}
-	assign(aM,'/var/log'); reset(aM);
-	AsignarDetalles(aD);
-	Merge(aM,aD);
+	assign(aM,'/var/log'); rewrite(aM);
+	AsignarDetalles(lanD);
+	Merge(aM,lanD,pos);
+	CerrarLan(lanD);
+	close(aM);
 End.
+
+{La fecha me queda medio colgada, todos los logs son de distintas fechas, qué me guardo en el maestro?}
